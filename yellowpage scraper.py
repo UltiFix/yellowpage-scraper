@@ -2,6 +2,7 @@ import re
 from math import ceil
 from random import randint
 from time import sleep
+from datetime import datetime
 
 import requests
 from bs4 import BeautifulSoup
@@ -49,6 +50,14 @@ def extract_info(info):
 def main(URL: str, FILE_PATH: str):
     """This function starts the scraping process with parameters:
     URL (e.g., yellowpages.com/) and FILE_PATH (e.g., D:/Python Pro/Output/output.csv)"""
+    
+    # get current timestamp
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Write URL and timestamp to CSV file
+    with open(FILE_PATH, 'a') as f:
+        f.write(f"URL: {URL}, Timestamp: {timestamp}\n")
+
     response = requests.get(URL, headers={"User-Agent": USER_AGENT})
     soup = BeautifulSoup(response.content, "html.parser")
     info_list = []
@@ -87,21 +96,13 @@ def main(URL: str, FILE_PATH: str):
         info_list.extend(extract_info(info) for info in infos)
         print(f"Extracted {len(infos)} records from page {page}")
 
-        # Save data every 5 pages and on the last page
-        if page % 5 == 0 or page == total_page:
-            print("Saving data to CSV")
-            df = pd.DataFrame(info_list)
-            df.to_csv(FILE_PATH, index=False, mode='a', header=not bool(page % 5))
-            info_list = []
+        # Save data every page
+        print("Saving data to CSV")
+        df = pd.DataFrame(info_list)
+        df.to_csv(FILE_PATH, index=False, mode='a', header=True if page == 1 else False)
+        info_list = []
 
         page += 1
-
-    # Save any remaining data
-    if info_list:
-        print("Saving final batch of data to CSV")
-        df = pd.DataFrame(info_list)
-        df.to_csv(FILE_PATH, index=False, mode='a', header=False)
-
     print("Data Extraction Complete")
 
 
